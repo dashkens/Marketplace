@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import ArrowRightIcon from '../assets/svg/keyboardArrowRightIcon.svg?react'
 import visibilityIcon from '../assets/svg/visibilityIcon.svg'
 import { Link, useNavigate } from 'react-router-dom'
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { db } from '../firebase.config'
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore'
 
 export default function SignUp() {
   
@@ -22,6 +25,31 @@ export default function SignUp() {
       [e.target.id]: e.target.value
     }) )
   }
+
+  const onSubmit = async(e)=> {
+    e.preventDefault()
+
+    try {
+      const auth = getAuth()
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+      
+      updateProfile(auth.currentUser,{
+        displayName: name,
+      })
+
+      const formDataCopy = {...formData}
+      delete formDataCopy.password
+      formDataCopy.timestamp = serverTimestamp()
+
+      await setDoc(doc(db, 'users', user.uid), formDataCopy)
+
+      navigate('/')
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
   return (
     <>
     <div className="pageContainer">
@@ -31,23 +59,23 @@ export default function SignUp() {
         </p>
       </header>
       <main>
-        <form>
-        <input 
-          type="text" 
-          value={email} 
-          id="name" 
-          className='nameInput' 
-          placeholder='Name'
-          onChange={onChange}
-          />
+        <form onSubmit={onSubmit}>
           <input 
-          type="email" 
-          value={email} 
-          id="email" 
-          className='emailInput' 
-          placeholder='Email'
-          onChange={onChange}
-          />
+            type="text" 
+            value={name} 
+            id="name" 
+            className='nameInput' 
+            placeholder='Name'
+            onChange={onChange}
+            />
+            <input 
+            type="email" 
+            value={email} 
+            id="email" 
+            className='emailInput' 
+            placeholder='Email'
+            onChange={onChange}
+            />
           <div className="passwordInputDiv">
             <input type={showPassword? 'text' : 'password'} 
               className='passwordInput'
